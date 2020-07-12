@@ -1,13 +1,12 @@
 use crate::database::Pool;
 use crate::error::WebError;
 
-use actix_web::{Error, HttpRequest, HttpResponse, Responder};
-use futures::future::{ready, Ready};
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-use validator::Validate;
+use crate::forms::todo::{CreateTodo, UpdateTodo};
 
-use super::todo_list::TodoList;
+use actix_web::{error::Error, HttpRequest, HttpResponse, Responder};
+use futures::future::{ready, Ready};
+use serde::Serialize;
+use sqlx::FromRow;
 
 impl Responder for Todo {
   type Error = Error;
@@ -29,19 +28,6 @@ pub struct Todo {
   id: i64,
   content: String,
   completed: bool,
-}
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct CreateTodo {
-  #[validate(length(min = 1))]
-  content: String,
-}
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct UpdateTodo {
-  #[validate(length(min = 1))]
-  content: Option<String>,
-  completed: Option<bool>,
 }
 
 impl Todo {

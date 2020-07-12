@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate validator_derive;
 
-use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{middleware, web, App, HttpServer};
 use anyhow::Result;
 use dotenv::dotenv;
 use std::env;
@@ -9,6 +9,7 @@ use std::env;
 mod controller;
 mod database;
 mod error;
+mod forms;
 mod model;
 mod web_app;
 

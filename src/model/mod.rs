@@ -1,2 +1,3 @@
-pub mod todo;
-pub mod todo_list;
+mod todo;
+
+pub use todo::Todo;

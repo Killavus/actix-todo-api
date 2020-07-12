@@ -1,6 +1,8 @@
 use crate::database::Pool;
 use crate::error::WebError;
-use crate::model::todo::{CreateTodo, Todo, UpdateTodo};
+use crate::forms::todo::{CreateTodo, UpdateTodo};
+use crate::model::Todo;
+
 use crate::web_app::ValidatedJson;
 use actix_web::{get, patch, post, web, Result};
 
