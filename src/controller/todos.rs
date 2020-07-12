@@ -4,7 +4,8 @@ use crate::forms::todo::{CreateTodo, UpdateTodo};
 use crate::model::Todo;
 
 use crate::web_app::ValidatedJson;
-use actix_web::{get, patch, post, web, Result};
+use actix_web::{delete, get, patch, post, web, Result};
+use serde_json::json;
 
 #[get("")]
 async fn list(pool: web::Data<Pool>) -> Result<web::Json<Vec<Todo>>, WebError> {
@@ -39,10 +40,22 @@ async fn update(
   Ok(web::Json(todo))
 }
 
+#[delete("/{todoid}")]
+async fn delete(
+  id: web::Path<i64>,
+  pool: web::Data<Pool>,
+) -> Result<web::Json<serde_json::Value>, WebError> {
+  let todo = Todo::find(id.into_inner(), &pool).await?;
+  todo.delete(&pool).await?;
+
+  Ok(web::Json(json!({ "status": "ok" })))
+}
+
 pub fn init(cfg: &mut web::ServiceConfig) {
   cfg
     .service(list)
     .service(create)
     .service(fetch)
-    .service(update);
+    .service(update)
+    .service(delete);
 }

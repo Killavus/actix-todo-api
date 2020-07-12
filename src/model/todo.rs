@@ -137,4 +137,13 @@ impl Todo {
         .map_err(|err| WebError::DatabaseError(err))?,
     )
   }
+
+  pub async fn delete(self, pool: &Pool) -> Result<(), WebError> {
+    sqlx::query!("DELETE FROM todos WHERE id = ?", self.id)
+      .execute(&*pool)
+      .await
+      .map_err(|err| WebError::DatabaseError(err))?;
+
+    Ok(())
+  }
 }
