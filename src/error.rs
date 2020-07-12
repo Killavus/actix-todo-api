@@ -25,7 +25,14 @@ impl Error for WebError {
 
 impl Display for WebError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
+    use WebError::*;
+    let identifier = match self {
+      ValidationError(_) => "ValidationError",
+      DatabaseError(_) => "DatabaseError",
+      ActixError(_) => "InternalError",
+    };
+
+    write!(f, "{}", identifier)
   }
 }
 
