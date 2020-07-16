@@ -86,6 +86,12 @@ pub type Pool = sqlx::PgPool;
 #[cfg(not(target_feature = "postgres"))]
 pub type Pool = sqlx::SqlitePool;
 
+#[cfg(target_feature = "postgres")]
+pub type Row = sqlx::postgres::PgRow;
+
+#[cfg(not(target_feature = "postgres"))]
+pub type Row = sqlx::sqlite::SqliteRow;
+
 pub async fn pool(config: PoolConfig) -> Result<Pool> {
   Pool::builder()
     .connect_timeout(config.conn_timeout)
