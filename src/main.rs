@@ -26,6 +26,7 @@ async fn main() -> Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .service(web::scope("/todos").configure(controller::todos::init))
+            .service(web::scope("/work_lists").configure(controller::work_lists::init))
             .data(db_pool.clone())
     })
     .bind(bind_host)?
