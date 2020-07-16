@@ -17,9 +17,9 @@ CREATE TABLE client_api_keys (
   key TEXT NOT NULL,
   client_id INTEGER NOT NULL,
   FOREIGN KEY(client_id) REFERENCES clients(id)
-)
+);
 
-CREATE INDEX client_api_valid_to_index ON client_api_keys(user_id, valid_to);
+CREATE INDEX client_api_valid_to_index ON client_api_keys(client_id, valid_to);
 
 CREATE TABLE work_lists (
   id INTEGER PRIMARY KEY NOT NULL,
