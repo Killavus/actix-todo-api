@@ -12,6 +12,18 @@ pub enum WebError {
   ActixError(error::Error),
 }
 
+impl From<sqlx::Error> for WebError {
+  fn from(error: sqlx::Error) -> Self {
+    Self::DatabaseError(error)
+  }
+}
+
+impl From<error::Error> for WebError {
+  fn from(error: error::Error) -> Self {
+    Self::ActixError(error)
+  }
+}
+
 impl Error for WebError {
   fn source(&self) -> Option<&(dyn Error + 'static)> {
     use WebError::*;
