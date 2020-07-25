@@ -1,8 +1,9 @@
 use crate::database::Pool;
 use crate::error::WebError;
 use actix_web::{dev, web, FromRequest, HttpRequest};
-use futures::future::{ready, LocalBoxFuture};
+use futures::future::{lazy, ready, LocalBoxFuture};
 use futures::prelude::*;
+use log::warn;
 use sqlx::FromRow;
 
 #[derive(Debug, FromRow)]
@@ -44,31 +45,44 @@ impl FromRequest for Client {
     type Config = ();
 
     fn from_request(req: &HttpRequest, payload: &mut dev::Payload) -> Self::Future {
-        if let Some(auth) = req.headers().get("Authorization") {
-            match auth.to_str() {
-                Ok(auth_str) => {
-                    let mut token = auth_str.split_whitespace().skip(1);
+        let pool = web::Data::<Pool>::from_request(req, payload)
+            .into_inner()
+            .map_err(|err| {
+                warn!("Failed to obtain database pool: {:?}", err);
+                WebError::Unauthorized
+            });
 
-                    if let Some(token) = token.next() {
-                        let token = token.to_lowercase();
-                        match req
-                            .app_data::<Pool>()
-                            .ok_or(WebError::Unauthorized)
-                            .map(|pool| Client::authorize(&token, &pool))
-                        {
-                            Ok(fut) => fut
-                                .map(|client| client.unwrap_or(None).ok_or(WebError::Unauthorized))
-                                .boxed_local(),
-                            Err(err) => ready(Err(err)).boxed_local(),
-                        }
-                    } else {
-                        ready(Err(WebError::Unauthorized)).boxed_local()
-                    }
+        let token = req
+            .headers()
+            .get("Authorization")
+            .ok_or(WebError::Unauthorized)
+            .and_then(|header| header.to_str().map_err(|_| WebError::Unauthorized))
+            .map(|header| header.to_lowercase())
+            .and_then(|header| {
+                if header.starts_with("token") {
+                    Ok(header
+                        .trim_start_matches("token")
+                        .trim_start()
+                        .trim_end()
+                        .to_string())
+                } else {
+                    Err(WebError::Unauthorized)
                 }
-                Err(_) => ready(Err(WebError::Unauthorized)).boxed_local(),
-            }
+            });
+
+        if token.is_err() || pool.is_err() {
+            return ready(Err(WebError::Unauthorized)).boxed_local();
         } else {
-            ready(Err(WebError::Unauthorized)).boxed_local()
+            // SAFETY: Safe because we've checked for error case in conditional.
+            let pool = pool.unwrap();
+            let token = token.unwrap();
+            let fut = async move {
+                Self::authorize(&token, &pool)
+                    .await
+                    .and_then(|client| client.ok_or(WebError::Unauthorized))
+            };
+
+            fut.boxed_local()
         }
     }
 }
