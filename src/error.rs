@@ -10,6 +10,7 @@ pub enum WebError {
   ValidationError(ValidationErrors),
   DatabaseError(sqlx::Error),
   ActixError(error::Error),
+  Unauthorized,
 }
 
 impl From<sqlx::Error> for WebError {
@@ -42,6 +43,7 @@ impl Display for WebError {
       ValidationError(_) => "ValidationError",
       DatabaseError(_) => "DatabaseError",
       ActixError(_) => "InternalError",
+      Unauthorized => "Unauthorized",
     };
 
     write!(f, "{}", identifier)
@@ -64,6 +66,7 @@ impl WebError {
       ActixError(err) => {
         error_map["details"] = json!({ "message": err.to_string() });
       }
+      Unauthorized => {}
     }
   }
 }
