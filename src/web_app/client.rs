@@ -1,7 +1,7 @@
 use crate::database::Pool;
 use crate::error::WebError;
 use actix_web::{dev, web, FromRequest, HttpRequest};
-use futures::future::{lazy, ready, LocalBoxFuture};
+use futures::future::{ready, LocalBoxFuture};
 use futures::prelude::*;
 use log::warn;
 use sqlx::FromRow;
@@ -13,16 +13,8 @@ pub struct Client {
 }
 
 impl Client {
-    fn new(id: i64, display_name: String) -> Self {
-        Self { id, display_name }
-    }
-
     pub fn id(&self) -> i64 {
         self.id
-    }
-
-    pub fn name(&self) -> &str {
-        &self.display_name
     }
 
     pub async fn authorize(token: &str, pool: &Pool) -> Result<Option<Self>, WebError> {

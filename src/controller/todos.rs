@@ -3,7 +3,7 @@ use crate::error::WebError;
 use crate::forms::todo::{CreateTodo, UpdateTodo};
 use crate::model::Todo;
 
-use crate::web_app::{Client, ValidatedJson};
+use crate::web_app::ValidatedJson;
 use actix_web::{delete, get, patch, post, web, Result};
 use serde_json::json;
 
@@ -13,12 +13,7 @@ async fn list(pool: web::Data<Pool>) -> Result<web::Json<Vec<Todo>>, WebError> {
 }
 
 #[get("/{todoid}")]
-async fn fetch(
-    pool: web::Data<Pool>,
-    client: Client,
-    id: web::Path<i64>,
-) -> Result<web::Json<Todo>, WebError> {
-    log::warn!("{:?}", client);
+async fn fetch(pool: web::Data<Pool>, id: web::Path<i64>) -> Result<web::Json<Todo>, WebError> {
     Todo::find(id.into_inner(), &pool)
         .await
         .map(|todo| web::Json(todo))
