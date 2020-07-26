@@ -10,6 +10,13 @@ Copy `.env.example` to `.env` and set up your [database URL](https://github.com/
 cargo run
 ```
 
+## Supported features
+
+- Simple authorization scheme using API keys - every `Client` can have multiple API keys with expiration date
+- Two-tiered hierarchy - clients have work lists, which in turn contains todos.
+- Logging
+- Validation of inputs
+
 Your API should now listen on `127.0.0.1:8080`.
 
 ## Supported databases
