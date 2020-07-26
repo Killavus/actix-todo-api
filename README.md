@@ -11,3 +11,12 @@ cargo run
 ```
 
 Your API should now listen on `127.0.0.1:8080`.
+
+## Supported databases
+
+This project supports two databases:
+
+- SQLite for development purposes
+- PostgreSQL for production
+
+Please enable feature `"postgres"` if you want to use PostgreSQL database.
