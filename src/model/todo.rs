@@ -1,5 +1,6 @@
 use crate::database::Pool;
 use crate::error::WebError;
+use crate::web_app::Client;
 
 use crate::forms::todo::{CreateTodo, UpdateTodo};
 
@@ -30,6 +31,21 @@ pub struct Todo {
 }
 
 impl Todo {
+    async fn authorize(work_list_id: i64, client: &Client, pool: &Pool) -> Result<(), WebError> {
+        let result: (bool,) =
+            sqlx::query_as("SELECT ? IN (SELECT id FROM work_lists WHERE client_id = ?)")
+                .bind(work_list_id)
+                .bind(client.id())
+                .fetch_one(&*pool)
+                .await?;
+
+        if result.0 == false {
+            Err(WebError::Unauthorized)
+        } else {
+            Ok(())
+        }
+    }
+
     fn new(id: i64, content: String, completed: bool, work_list_id: i64) -> Self {
         Self {
             id,
@@ -39,16 +55,18 @@ impl Todo {
         }
     }
 
-    pub async fn find(id: i64, pool: &Pool) -> Result<Self, WebError> {
-        sqlx::query_as!(Todo, "SELECT * FROM todos WHERE id = ?", id)
+    pub async fn find(id: i64, client: &Client, pool: &Pool) -> Result<Self, WebError> {
+        let client_id = client.id();
+        sqlx::query_as!(Todo, "SELECT todos.* FROM todos JOIN work_lists ON work_lists.id = todos.work_list_id WHERE todos.id = ? AND work_lists.client_id = ?", id, client_id)
             .fetch_one(&*pool)
             .await
             .map_err(|err| err.into())
     }
 
-    pub async fn create(form: CreateTodo, pool: &Pool) -> Result<Self, WebError> {
+    pub async fn create(form: CreateTodo, client: &Client, pool: &Pool) -> Result<Self, WebError> {
         // We are going to fetch last row id, it needs to be performed in the same query.
         let mut conn = pool.acquire().await?;
+        Self::authorize(form.work_list_id, &client, pool).await?;
 
         #[cfg(target_feature = "postgres")]
         {
@@ -84,8 +102,11 @@ impl Todo {
     pub async fn update(
         &mut self,
         mut form: UpdateTodo,
+        client: &Client,
         pool: &Pool,
     ) -> Result<&mut Self, WebError> {
+        Self::authorize(self.work_list_id, &client, pool).await?;
+
         let mut where_list = Vec::with_capacity(2);
         let new_content = form.content.take();
         let new_completed = form.completed.take();
@@ -127,13 +148,9 @@ impl Todo {
         Ok(self)
     }
 
-    pub async fn all(pool: &Pool) -> Result<Vec<Self>, WebError> {
-        Ok(sqlx::query_as!(Todo, "SELECT * FROM todos")
-            .fetch_all(&*pool)
-            .await?)
-    }
+    pub async fn delete(self, client: &Client, pool: &Pool) -> Result<(), WebError> {
+        Self::authorize(self.work_list_id, &client, pool).await?;
 
-    pub async fn delete(self, pool: &Pool) -> Result<(), WebError> {
         sqlx::query!("DELETE FROM todos WHERE id = ?", self.id)
             .execute(&*pool)
             .await?;

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use super::Todo;
 use crate::database::Pool;
 use crate::error::WebError;
-use crate::forms::work_list::CreateWorkList;
+use crate::forms::work_list::{CreateWorkList, UpdateWorkList};
 use crate::web_app::Client;
 
 #[derive(Serialize, Debug, FromRow)]
@@ -92,6 +92,48 @@ impl WorkList {
             .into_iter()
             .map(|(id, name)| Self::new(id, name, todos_map.remove(&id).unwrap_or(vec![])))
             .collect())
+    }
+
+    pub async fn delete(self, client: &Client, pool: &Pool) -> Result<(), WebError> {
+        let client_id = client.id();
+        let rows_affected: u64 = sqlx::query!(
+            "DELETE FROM work_lists WHERE id = ? AND client_id = ?",
+            self.id,
+            client_id
+        )
+        .execute(&*pool)
+        .await?;
+
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(WebError::DatabaseError(sqlx::Error::RowNotFound))
+        }
+    }
+
+    pub async fn update(
+        &mut self,
+        client: &Client,
+        form: UpdateWorkList,
+        pool: &Pool,
+    ) -> Result<&mut Self, WebError> {
+        let client_id = client.id();
+        let new_name = form.name.clone();
+        let rows_affected: u64 = sqlx::query!(
+            "UPDATE work_lists SET name = ? WHERE id = ? AND client_id = ?",
+            new_name,
+            self.id,
+            client_id
+        )
+        .execute(&*pool)
+        .await?;
+
+        if rows_affected > 0 {
+            self.name = form.name;
+            Ok(self)
+        } else {
+            Err(WebError::DatabaseError(sqlx::Error::RowNotFound))
+        }
     }
 
     pub async fn find(id: i64, client: &Client, pool: &Pool) -> Result<Self, WebError> {
