@@ -6,6 +6,10 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+postgres = []
+
 [dependencies]
 actix-rt = "1.0"
 actix-web = "2.0"
@@ -18,7 +22,7 @@ log = "0.4"
 maplit = "1.0"
 serde = "1.0"
 serde_json = "1.0"
-sqlx = {git = "https://github.com/launchbadge/sqlx", default-features = true, features = ["sqlite"]}
+sqlx = {git = "https://github.com/launchbadge/sqlx", default-features = true, features = ["sqlite", "postgres"]}
 tokio = {version = "0.2", features = ["full"]}
 validator = "0.10"
 validator_derive = "0.10"
